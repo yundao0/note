@@ -36,6 +36,10 @@
   const int* p = &array // 指针p只读`&array`，不能够对其进行修改
   ```
 
+- C++11标准增加了全局函数std::to_string
+
+  - 泛型做的很好，直接调用就完了
+
   
 
 ## 函数传参
@@ -451,7 +455,65 @@ um.count(key) // return:bool，是否存在这个key
   top() 返回栈顶元素
   ```
 
+### string
+
+- 函数
+
+  - 1
+
+  ```c++
   
+  ```
+
+# 各种stream
+
+## stringstream
+
+- 用法
+
+  - 初始化
+
+  ```c++
+  #include<sstream>
+  
+  istringstream is("……"); // 有参，赋初值
+  istringstream is; // 无参
+  ```
+
+  - 函数们
+
+  ```c++
+  ss.str(); //返回此时string流里的字符
+  ss.str(string s1); // 覆盖string流里的字符
+  ```
+
+  ```c++
+  ss.clear() vs ss.str(“”)
+  
+  一个流的状态被设置为eofbit
+    https://blog.csdn.net/lanchunhui/article/details/50731706
+  ```
+
+  - 基础用法
+
+    - 读取一种数据类型
+
+      ![image-20220324173343772](cpp.assets/image-20220324173343772.png)
+
+    - 配合getline进行split
+
+      ```c++
+      list<string> dataArray;
+      stringstream ss;
+      ss.str(data);
+      char delim=',';
+      string item;
+      while(getline(ss,item,delim)){
+          dataArray.push_back(item);
+      }
+      ```
+
+      
 
 # 特性
 

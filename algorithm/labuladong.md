@@ -841,6 +841,64 @@
 
 ## 2.1 二叉树
 
+### 2.1.0 Overview
+
+- Full Binary Tree，完满二叉树
+
+  - 只要有孩子，就必然有两个孩子
+
+  <img src="labuladong.assets/image-20220323220542342.png" alt="image-20220323220542342" style="zoom:50%;" />
+
+- Complete Binary Tree，完全二叉树
+
+  - 差最后一层的最右边
+
+    <img src="labuladong.assets/image-20220323220644141.png" alt="image-20220323220644141" style="zoom:50%;" />
+
+- Perfect Binary Tree，满二叉树（完美二叉树）
+
+  - 正三角形
+
+    <img src="labuladong.assets/image-20220323220731280.png" alt="image-20220323220731280" style="zoom:50%;" />
+
+- 前序遍历：**pre**order
+
+  中序遍历：**in**order
+
+  后序遍历：**post**order
+
+- **二叉树怎样序列化才能重建**
+
+  - 存NULL
+
+    - 前序、后序：可以。见2.1.3.9
+    - 中序：**不可以**。经证明，所有二叉树的中序遍历都形如 
+      - **单独的中序二叉树，不提供任何结构信息**
+
+  - 不存NULL
+
+    - 先序+中序：可以。
+
+      - 要求是**树中没有重复的元素**，否则无法通过中序锁定root的位置
+
+    - 后序 + 中序：可以
+
+    - 先序+后序：**不可以**
+
+      - 反例：下面两棵树的先序遍历都是 12，后序遍历都是 21。
+
+        <img src="labuladong.assets/image-20220324205244357.png" alt="image-20220324205244357" style="zoom: 50%;" />
+
+    - 层序 + 先序：**不可以**
+
+      - 反例：上图
+
+    - 层序 + 后序：**不可以**
+
+      - 反例：上图
+
+    - 层序 + 中序：可以
+
 ### 2.1.1 前中后序
 
 - **前中后序**是遍历二叉树过程中处理每一个节点的**三个特殊时间点**，绝不仅仅是三个顺序不同的 List
@@ -878,7 +936,7 @@
 
 - 法1
 
-  - why：在前序位置增加`depth`，在后序位置减小`depth`
+  - 提问：为什么要在前序位置增加`depth`，在后序位置减小`depth`？
     - ans：前序位置是进入一个节点的时候，后序位置是离开一个节点的时候，`depth`记录当前递归到的节点深度，所以要这样维护
 
   ```c++
@@ -950,6 +1008,7 @@
   - 解释
 
     - 无论「直径」长什么样，一定存在一个“最高点”。那把这个“最高点”作为root，则满足上述求解过程。所以一定能被上述过程求出。
+    - 还有一个“恰巧”，就是上述答案，恰好等于“左深度+右深度”
 
   - 代码
 
@@ -972,11 +1031,631 @@
     };
     ```
 
+#### 2.1.3.3 翻转二叉树
+
+- 把一个二叉树镜像
+
+  - leecode：226
+
+    ```c++
+    // 将整棵树的节点翻转
+    TreeNode invertTree(TreeNode root) {
+        // base case
+        if (root == null) {
+            return null;
+        }
+    
+        /**** 前序遍历位置 ****/
+        // root 节点需要交换它的左右子节点
+        TreeNode tmp = root.left;
+        root.left = root.right;
+        root.right = tmp;
+    
+        // 让左右子节点继续翻转它们的子节点
+        invertTree(root.left);
+        invertTree(root.right);
+    
+        return root;
+    }
+    ```
+
+#### 2.1.3.4 填充二叉树节点右侧指针
+
+- 题意
+
+  - leecode：116
+
+  ![image-20220324113113100](labuladong.assets/image-20220324113113100.png)
+
+- 只用一个参数解决不了，得两个
+
+  - 直观感受：可以递归的，只能包含**一层与下一层**间的东西。
+    - 如果用connect函数递归的话，会关系到下下层的点，所以不行。
+
+  ```c++
+  // 主函数
+  Node connect(Node root) {
+      if (root == null) return null;
+      connectTwoNode(root.left, root.right);
+      return root;
+  }
+  
+  // 定义：输入两个节点，将它俩连接起来
+  void connectTwoNode(Node node1, Node node2) {
+      if (node1 == null || node2 == null) {
+          return;
+      }
+      /**** 前序遍历位置 ****/
+      // 将传入的两个节点连接
+      node1.next = node2;
+  
+      // 连接相同父节点的两个子节点
+      connectTwoNode(node1.left, node1.right);
+      connectTwoNode(node2.left, node2.right);
+      // 连接跨越父节点的两个子节点
+      connectTwoNode(node1.right, node2.left);
+  }
+  ```
+
+#### 2.1.3.5 二叉树拉平为链表
+
+- 题意
+
+  - leecode：114
+
+    ![image-20220324151136544](labuladong.assets/image-20220324151136544.png)
+
+- 收获
+
+  - 递归的时候，**并不是只能触碰自己与下面一层，而是可以触碰很多**
+
+  - 思路：递归
+
+    - 先把左子树拉平
+    - 再把右子树拉平
+    - 左子树换到右边，把右子树接到左子树后面
+
+    ```c++
+    // 定义：将以 root 为根的树拉平为链表
+    void flatten(TreeNode root) {
+        // base case
+        if (root == null) return;
+    
+        flatten(root.left);
+        flatten(root.right);
+    
+        /**** 后序遍历位置 ****/
+        // 1、左右子树已经被拉平成一条链表
+        TreeNode left = root.left;
+        TreeNode right = root.right;
+    
+        // 2、将左子树作为右子树
+        root.left = null;
+        root.right = left;
+    
+        // 3、将原先的右子树接到当前右子树的末端
+        TreeNode p = root;
+        while (p.right != null) {
+            p = p.right;
+        }
+        p.right = right;
+    }
+    ```
+
+#### 2.1.3.6 构建最大二叉树
+
+- 题意
+
+  - 把一个数组构建成了一个类似中序遍历的样子
+
+    ![image-20220324154024707](labuladong.assets/image-20220324154024707.png)
+
+    ![image-20220324154033110](labuladong.assets/image-20220324154033110.png)
+
+- 这个题需要折腾一个**数组**，所以递归的时候，将**数组的左右区间作为参数**会比较舒服
+
+  - 1
+
+  ```c++
+  /* 主函数 */
+  TreeNode constructMaximumBinaryTree(int[] nums) {
+      return build(nums, 0, nums.length - 1);
+  }
+  
+  /* 将 nums[lo..hi] 构造成符合条件的树，返回根节点 */
+  TreeNode build(int[] nums, int lo, int hi) {
+      // base case
+      if (lo > hi) {
+          return null;
+      }
+  
+      // 找到数组中的最大值和对应的索引
+      int index = -1, maxVal = Integer.MIN_VALUE;
+      for (int i = lo; i <= hi; i++) {
+          if (maxVal < nums[i]) {
+              index = i;
+              maxVal = nums[i];
+          }
+      }
+  
+      TreeNode root = new TreeNode(maxVal);
+      // 递归调用构造左右子树
+      root.left = build(nums, lo, index - 1);
+      root.right = build(nums, index + 1, hi);
+  
+      return root;
+  }
+  ```
+
+#### 2.1.3.7 前序和中序构造二叉树
+
+- 题意
+  - leecode：105
+  - 如何用前序和中序（两个数组）构建出原树
+- 思考
+  - 既然是跟数组打交道，那递归函数的参数一定是**数组的边界**
+  - 可以通过preorder找到此时的根，于是可以通过inorder锁定左右子树
+  - **难点在于**：构造左右子树时，数组边界怎么取
+
+- 解题
+
+  - 首先，中序遍历的边界很好取
+
+    <img src="labuladong.assets/image-20220324155915112.png" alt="image-20220324155915112" style="zoom:50%;" />
+
+    ```c++
+    root.left = build(preorder, ?, ?,
+                      inorder, inStart, index - 1);
+    
+    root.right = build(preorder, ?, ?,
+                       inorder, index + 1, inEnd);
+    ```
+
+  - 然后，通过inorder找到left和right的长度，从而算出preorder中的长度怎么取
+
+    - 如果倒腾长度太麻烦，可以这样想：以left为例，*(index-1)-inStart=x-(preStart+1)* 一定成立，解得x=preStart+（index - inStart）
+
+    <img src="labuladong.assets/image-20220324160357719.png" alt="image-20220324160357719" style="zoom:50%;" />
+
+    ```c++
+    int leftSize = index - inStart;
+    
+    root.left = build(preorder, preStart + 1, preStart + leftSize,
+                      inorder, inStart, index - 1);
+    
+    root.right = build(preorder, preStart + leftSize + 1, preEnd,
+                       inorder, index + 1, inEnd);
+    ```
+
+- 代码
+
+  - 1
+
+  ```java
+  TreeNode build(int[] preorder, int preStart, int preEnd, 
+                 int[] inorder, int inStart, int inEnd) {
+  
+      if (preStart > preEnd) {
+          return null;
+      }
+  
+      // root 节点对应的值就是前序遍历数组的第一个元素
+      int rootVal = preorder[preStart];
+      // rootVal 在中序遍历数组中的索引
+      int index = 0;
+      for (int i = inStart; i <= inEnd; i++) {
+          if (inorder[i] == rootVal) {
+              index = i;
+              break;
+          }
+      }
+  
+      int leftSize = index - inStart;
+  
+      // 先构造出当前根节点
+      TreeNode root = new TreeNode(rootVal);
+      // 递归构造左右子树
+      root.left = build(preorder, preStart + 1, preStart + leftSize,
+                        inorder, inStart, index - 1);
+  
+      root.right = build(preorder, preStart + leftSize + 1, preEnd,
+                         inorder, index + 1, inEnd);
+      return root;
+  }
+  ```
+
+#### 2.1.3.8 二叉树中重复子树
+
+- 题意
+
+  - leecode：652
+  - <img src="labuladong.assets/image-20220324162250107.png" alt="image-20220324162250107" style="zoom:50%;" />
+
+- 思路
+
+  - 对于递归中的某个root，他需要知道两个东西：
+
+    1、以我为根的这棵二叉树（子树）长啥样？
+
+    - 很好解决，通过后序遍历，把子树变为string
+
+    2、以其他节点为根的子树都长啥样？
+
+    - 需要一个全局信息，记录不同的string是否出现过
+
+  - 哪怕一个子树出现了10次，也只应该把他加入答案集合1次。所以不仅需要知道“不同的string是否出现过”，还得知道“我是第几次出现”
+
+- 题解
+
+  - 1
+
+  ```c++
+  class Solution {
+  public:
+      string dfs(TreeNode* root, vector<TreeNode*>& res, unordered_map<string, int>& mp){
+          if(root==NULL) return "";
+          //二叉树先序序列化
+          string str = to_string(root->val) + "," + dfs(root->left, res, mp) + "," + dfs(root->right, res, mp);
+          
+          if(mp[str]==1){
+              res.push_back(root);
+          } 
+          mp[str]++;
+          return str;
+      }
+  
+      vector<TreeNode*> findDuplicateSubtrees(TreeNode* root) {
+          vector<TreeNode*> res;
+          unordered_map<string, int> mp;
+          dfs(root, res, mp);
+          return res;
+      }
+  
+  };
+  ```
+
+#### 2.1.3.9 二叉树的序列化与反序列化
+
+- 题意
+
+  - leecode：297
+  - 自己实现两个函数，可以把二叉树序列化再还原
+
+- **前序遍历 方法**
+
+  - 一般情况，只靠前序遍历是不足够还原出一棵树的。但是如果还存了NULL，那就可以了
+
+  - 只要在遇到#时，return，就可以结束一侧的搜索
+
+  - 过程如图
+
+    <img src="labuladong.assets/EE0D16A85AC9548F5E5077A6589FBD94.png" alt="img" style="zoom: 33%;" />
+
+    <img src="labuladong.assets/5DEA738930FA738AE5C4C44FEB3DCAC2.png" alt="img" style="zoom:33%;" />
+
+  - 代码
+
+    ```c++
+    /**
+     * Definition for a binary tree node.
+     * struct TreeNode {
+     *     int val;
+     *     TreeNode *left;
+     *     TreeNode *right;
+     *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}
+     * };
+     */
+    class Codec {
+    private:
+        string str;
+    public:
+    
+        // Encodes a tree to a single string.
+        string serialize(TreeNode* root) {
+            rserialize(root);
+            return str;
+        }
+    
+        void rserialize(TreeNode* root){
+            if(root==nullptr){
+                str+="None,";
+                return;
+            }
+            str+=to_string(root->val)+',';
+            rserialize(root->left);
+            rserialize(root->right);
+        }
+    
+        TreeNode* rdeserialize(list<string>& dataArray){
+            if(dataArray.front()=="None"){
+                dataArray.erase(dataArray.begin());
+                return nullptr;
+            }
+            TreeNode* root=new TreeNode(stoi(dataArray.front()));
+            dataArray.erase(dataArray.begin());
+            root->left=rdeserialize(dataArray);
+            root->right=rdeserialize(dataArray);
+            return root;
+        }
+    
+    
+        // Decodes your encoded data to tree.
+        TreeNode* deserialize(string data) {
+            list<string> dataArray;
+            stringstream ss;
+            ss.str(data);
+            char delim=',';
+            string item;
+            while(getline(ss,item,delim)){
+                dataArray.push_back(item);
+            }
+            
+            return rdeserialize(dataArray);
+        }
+    };
+    ```
+
+- **后序遍历 方法**
+
+  - 如果不经思考，认为后序遍历的deserialize也是后序遍历的板子，则会考虑如下的**错误代码**
+
+    - 其错误显而易见，程序会陷入死循环
+
+    ```java
+    // 代码是错误的 代码是错误的 代码是错误的
+    /* 辅助函数，通过 nodes 列表构造二叉树 */
+    TreeNode deserialize(LinkedList<String> nodes) {
+        if (nodes.isEmpty()) return null;
+    	TreeNode root;
+        root.left = deserialize(nodes);
+        root.right = deserialize(nodes);
+    
+        /****** 后序遍历位置 ******/
+        String first = nodes.removeFirst();
+        if (first.equals(NULL)) return null;
+        root = new TreeNode(Integer.parseInt(first));
+        /***********************/
+    
+        return root;
+    }
+    // 代码是错误的 代码是错误的 代码是错误的
+    ```
+
+  - 正确的思路：
+
+    - 每次拿出**最后一个元素**，作为根节点
+    - 然后用剩余的点先构建右子树；再构建左子树
+
+    <img src="labuladong.assets/4A7CDDB5C72DB986D9BA12705189CC33.png" alt="img" style="zoom: 33%;" />
+
+    ​	
+
+  - java版
+
+    ```c++
+    /* 主函数，将字符串反序列化为二叉树结构 */
+    TreeNode deserialize(String data) {
+        LinkedList<String> nodes = new LinkedList<>();
+        for (String s : data.split(SEP)) {
+            nodes.addLast(s);
+        }
+        return deserialize(nodes);
+    }
+    
+    /* 辅助函数，通过 nodes 列表构造二叉树 */
+    TreeNode deserialize(LinkedList<String> nodes) {
+        if (nodes.isEmpty()) return null;
+        // 从后往前取出元素
+        String last = nodes.removeLast();
+        if (last.equals(NULL)) return null;
+        TreeNode root = new TreeNode(Integer.parseInt(last));
+        // 限构造右子树，后构造左子树
+        root.right = deserialize(nodes);
+        root.left = deserialize(nodes);
+    
+        return root;
+    }
+    ```
+
+- 
+
+## 2.2 二叉搜索树
+
+## 2.3 图论
+
+### 2.3.1 最短路算法
+
+- 整体摘自这个博客：
+
+  [最短路的三种算法（Floyd、Dijkstra、SPFA）]: https://blog.csdn.net/qq_36932169/article/details/78806863
+
+- Floyd算法是**多源**最短路算法，复杂度最高O(v^3)，通常用在点比较少的起点不固定的问题中。**能解决负边（负权）但不能解决负环**。
+- Dijkstra算法是**单源**最短路算法，最常用时间复杂度（n\^2）优化后可以达到（nlogn），不能解决负边问题，稀疏图（点的范围很大但是边不多，边的条数|E|远小于|V|²）需要耗费比较多的空间。
+- SPFA算法适合稀疏图，可以解决带有负权边，负环的问题，但是在稠密图中效率比Dijkstra要低。
+  三种方法各有优劣适合的情况不同，所以可以判断情况选择一个适合的算法也是ACMer的基本素质。
+
+#### 2.3.1.1 Floyd算法
+
+- k：考虑 让所有“节点编号<=k”的节点作为“中转站”优化
+
+  - O(v^3)
+
+  - 代码
+
+    ```c++
+    #define MAX 65535
+    int Chara[N][N];// Chara为邻接矩阵
+    int p[N][N];  // p为前驱矩阵，“i到j的最短路，应该让i先去p[i][j]中转”
+    int n,m;
+    
+    void Floyd()
+    {
+       for(int i=0;i<n;i++)
+          for(int j=0;j<n;j++)
+              p[i][j]=j;//初始化，认为i到j的最短路 只能是 i直接到j
+        
+        for(int k=0;k<n;k++)
+            for(int i=0;i<n;i++)
+                for(int j=0;j<n;j++){
+                    if(Chara[i][k] == MAX || Chara[k][j] == MAX) continue;
+                    if(Chara[i][j] > Chara[i][k] + Chara[k][j]){
+                        //如果经过下标k顶点路径比原两点间路径更短
+                        //将当前两点权值设为更小的那一个
+                          Chara[i][j] = Chara[i][k] + Chara[k][j];
+                          p[i][j]=p[i][k];//路径设置经过下标k的顶点
+                    }
+                }
+    ```
+
+- 原理探讨：https://blog.csdn.net/xianpingping/article/details/79947091?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_title~default-0.pc_relevant_default&spm=1001.2101.3001.4242.1&utm_relevant_index=3
+
+  - 简单来说：
+
+    > 我们需要证明一个很致命的结论:
+    >
+    > 假设i和j之间的最短路径上的结点集里(不包含i,j),编号最大的一个是x.那么在外循环k=x时,d[i][j]肯定得到了最小值.
+    >
+    > 
+    >
+    > 怎么证明,可以用强归纳法.
+    >
+    > 设i到x中间编号最大的是x1,x到j中间编号最大的是x2.
+    >
+    > 由于x是i到j中间编号最大的,那么显然x1<x,x2<x.
+    >
+    > 根据结论,k=x1的时候d[i][x]已经取得最小值,k=x2的时候d[x][j]已经取得最小值.
+    >
+    > 那么就是k=x的时候,d[i][x]和d[x][j]肯定都已经取得了最小值.
+    >
+    > 因此k=x的时候,执行d[i][j]=min(d[i][j],d[i][x]+d[x][j])肯定会取得d[i][j]的最小值.
+    >
+    > 证毕.
+
+  - 举例：
+
+    > 1->4->3->2，当k=4时，才能得到 1到2 的最短路，但 4到2 的最短路已经在k=3的时候得出，于是在k=4时，能得到 1到4到2 的最短路。这也印证了上述论证：4是1到2的路径中最大的，当k=4时，4的左边和右边均已优化完毕。
+
+#### 2.3.1.2 Dijkstra算法
+
+- 加入贪心策略的Floyd算法（不过Floyd是多源的，Dijkstra是单源的）
+
+  - 思路
+
+    1. 有两个数组，dis和vis含义参见上面，初始时vis中只有起点，更新dis中的起点到所有点的距离
+    2. 遍历所有节点，找到**距离起点最近的**一个点K，将这个点加入vis中标记
+    3. 进行松弛操作，遍历没有在vis数组中的其他所有点，比较 “起点->该点” 和 “起点->K点->该点” 的距离
+    4. 重复2-3操作，直到所有的点遍历完
+
+  - 代码
+
+    ```c++
+    #define INF 65535
+    int n,m,s,t;
+    // Chara:邻接矩阵，dis[i]:src到i点的最短路程
+    // vis[i]:i点是否考虑过了,p[i]:i点的前驱节点是p[i]
+    int Chara[N][N],dis[N],vis[N],p[i];
+    
+    void Dijkstra(int src)  //src传入的起点
+    {
+        for(int i=0; i<m; i++) //初始化起点到所有点的距离
+        {
+            dis[i] = Chara[src][i];
+            vis[i] = 0;
+            p[i]=0;
+        }
+        dis[src] = 0; //到自身距离为0
+        vis[src] = 1; //标记 注src=0
+        for(int i=0; i<m; i++)
+        {
+            int ans = INF,k;
+            for(int j=0; j<m; j++) // 寻找 未被访问过&&距离起点v0最近 的点
+            {
+                if(!vis[j] && dis[j] < ans)
+                {
+                    k = j;
+                    ans = dis[j];
+                }
+            }
+            vis[k] = 1;   //标记已访问
+            if(ans == INF) break; //表示剩下所有点都不通
+            for(int j =0; j<m; j++)  //松弛操作，更新起点到所有未访问点的距离
+            {
+                if(!vis[j] &&  dis[k] + Chara[k][j]<dis[j] )
+                {
+                    dis[j] = dis[k] + Chara[k][j];
+                    p[j]=k;//存放前驱节点
+                }
+            }
+        }
+    }
+    ```
+
+#### 2.3.1.3 SPFA算法
+
+- 队列优化的B-F算法。可以解决负边问题，可以判断负环是否存在。在稀疏图中，采用类似邻接链表储存比较节省空间。
+
+- 代码
+
+  - weight是路径长度
+
+  ```c++
+  const int INF=0x3f3f3f3f;
+  const int N=210;
+  int n,m,s,t;
+  int dis[N],vis[N],sum[N];
+  struct node{
+      int v; ///点
+      int weight; ///权值
+  };
+  vector<node>mp[N]; //储存边;
+  //SPFA写法
+  void SPFA(int src)
+  {
+      int q;
+      queue<int>Q;
+      vis[src] = 1;
+      dis[src] = 0;
+      Q.push(src);
+      while(!Q.empty())
+      {
+          q = Q.front();
+          Q.pop();
+          vis[q] = 0;
+          for(int i=0;i<mp[q].size();i++)
+          {
+              if(dis[q] + mp[q][i].weight < dis[mp[q][i].v])
+              {
+                  dis[mp[q][i].v] = dis[q] + mp[q][i].weight;
+                  if(!vis[mp[q][i].v])
+                  {
+                      Q.push(mp[q][i].v);
+                      vis[mp[q][i].v] = 1;
+                  }
+              }
+          }
+      }
+      return ;
+  }
+  ```
+
+- 思路
+
+  - 初始时，只有把起点放入队列中。
+  - 遍历与起点相连的边，如果可以松弛就更新距离dis[],然后判断如果这个点没有在队列中就入队标记。
+    出队队首，取消标记，循环2-3步，直至队为空。
+  - 所有能更新的点都更新完毕，dis[]数组中的距离就是，起点到其他点的最短距离。
+
+- 为什么SPFA可以**处理负边**
+
+  - 因为在SPFA中每一个点松弛过后说明这个点距离更近了，所以有可能通过这个点会再次优化其他点，所以将这个点入队再判断一次，而Dijkstra中是贪心的策略，每个点选择之后就不再更新，如果碰到了负边的存在就会破坏这个贪心的策略就无法处理了。
+
+- 如何判断**成环**
+
+  - 在储存边时，记录下每个点的入度，每个点入队的时候记录一次，如果入队的次数大于这个点的入度，说明从某一条路进入了两次，即该点处成环。
+
+### 2.3.2 费用流
 
 
-## 二叉搜索树
-
-## 图论
 
 # 暴力搜索算法
 
