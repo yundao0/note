@@ -11,14 +11,18 @@
 - 2.0存储格式：https://blog.csdn.net/weixin_44324814/article/details/114631038
 
 - 存储格式
-  ![点格式版本对比](nebulanote.assets/42fbdd2cbed55cf1e67e6ad77191e4ef.png)
-  
-  ![点格式版本对比](nebulanote.assets/139102407a8ceccd5a6753a45aebea96.png)
   
   - Key里有PartID原因：用于 **Partition 重新分布(balance) 时方便根据前缀扫描整个 Partition 数据**
   
+- meta数据
 
+  - **Meta 如何存储 Schema**
 
+    我们以 CREATE TAG 为例子，当我们建 tag 时，首先会往 meta 发一个请求，让它把这个信息写进去。写入形式非常简单，先获取 tagId，再保存 tag name。底层 RocksDB 存储的 key 便是 tagId 或者是 tag name，value 是它每一个字段里面的定义，比如说，第一个字段是年龄，类型是整型 int；第二个字段是名字，类型是 string。schema 把所有字段的类型和名字全部存在 value 里，以某种序列化形式写到 RocksDB 中。
+
+    这里说下，meta 和 storage 两个 service 底层都是 RocksDB 采用 kv 存储，只不过提供了不一样的接口，比如说，meta 提供的接口，可能就是保存某个 tag，以及 tag 上有哪些属性；或者是机器或者 space 之类的元信息，包括像用户权限、配置信息都是存在 meta 里。storage 也是 kv 存储，不过存储的数据是点边数据，提供的接口是取点、取边、取某个点所有出边之类的图操作。整体上，meta 和 storage 在 kv 存储层代码是一模一样，只不过往上暴露的对外接口是不一样的。
+
+    最后，storage 和 meta 是分开存储的，二者不是一个进程且存的目录在启动的时指定的也不一样。
 
 # 代码结构
 
