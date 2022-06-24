@@ -107,10 +107,27 @@
   // 若构造函数有多个参数，但除了第1个，其他的都有缺省值，也算！
   Name name = “yundao”;
   name = "Tom"; //会创建新的Name实例，构造函数参数为“Tom”
+  
+  // 除此之外，还可以使用{}进行隐式构造
+  S s={1,2};
   ```
+  
+  - 在C++中, 如果构造函数只有1个参数时, 那么在编译的时候就会有一个缺省的转换操作:将赋的值带入构造函数
 
-  - 在C++中, 如果构造函数只有1个参数时, 那么在编译的时候就会有一个缺省的转换操作:将赋的值带入构造函数.
-  - 所以，也只有当参数只需要1个时，才能使用 = 来进行构造函数
+### 构造函数被调用
+
+```
+class S{
+public:
+	int a,int b;
+	S(){}
+	S(int a_,int b_):a(a_),b(b_){}
+};
+
+S ss[5]; //调用S()
+```
+
+
 
 ### explicit
 
@@ -353,21 +370,49 @@ sort(vector.begin(),vector.end());
 vector nums(10);      // 报错
 vecotr<int> nums(10); // 正确
 
-resize(n) 提前申请空间
+resize(n) 提前申请空间，会调用无参构造函数
 emplace_back(值) 尾部添加一个元素（C++11,执行效率比 push_back() 高）
 emplace(迭代器，值) 插入一个元素（C++11,执行效率比 insert() 高）
 ```
 
+- 重要的坑：reserve
+
+  - 没有size的时候，vector作为返回值时，会被认为是空的vector
+  - reserve 函数分配出来的内存空间，只是表示vector可以利用这部分内存，但vector不能有效地访问这些内存空间，访问的时候就会出现越界现象，导致程序崩溃。
+
+  ```c++
+  /*reserve不能提供size，a[1]=0也不能提供size*/
+  vector<int> a;
+  a.reserve(10);
+  a[0]=0;a[1]=0;a[2]=0;
+  cout<<a.size(); // 0
+  cout<<a.capacity(); // 10
+  
+  return a; //返回一个空的vector
+  ```
+
+  
+
+- 复制问题
+  - =是深复制，拷贝构造也是深复制（地址不同）
+- 执行速度
+  - 在多次递归问题中（例如归并排序），一直使用vector\<int\> & nums传参，不如建个全局的数组int nums[]快。
+
+
 - 坑
 
 ```c++
+/*长度问题*/
+vector<int> a;
+cout<<a.capacity()<<endl; // 0
+
 // 若指定了长度
 vector<int> a(4); // 此时a不是空的，而是{0,0,0,0}
 //此时再使用emplace_back插入
 a.emplace(1); // a：{0,0,0,0,1}
 ```
 
-
+### map
 
 ### unordered_map
 
@@ -382,6 +427,38 @@ a.emplace(1); // a：{0,0,0,0,1}
 um.size() // return:int，已经插入的几个KV对个数
 um.count(key) // return:bool，是否存在这个key
 ```
+
+- key为结构体时，**重载hash**
+
+  - https://blog.csdn.net/lpstudy/article/details/54345050
+
+  ```c++
+  struct Node
+  {
+      string name;
+      int val;
+  };
+  
+  struct NodeHash
+  {
+      size_t operator()(const Node& rhs) const{
+          return hash<string>()(rhs.name) ^ hash<int>()(rhs.val);
+      }
+  };
+  struct NodeCmp
+  {
+      bool operator()(const Node& lhs, const Node& rhs) const{
+          return lhs.name == rhs.name && lhs.val == rhs.val;
+      }
+  };
+  
+  // main
+      unordered_map<Node,int, NodeHash, NodeCmp> nodes = {
+          {{ "b", 100 },1}, {{ "a", 80 },2}, {{ "cc", 70 },3}, {{ "d", 60 },4}
+      };
+  ```
+
+  
 
 ### queue(priority_queue)
 
@@ -464,6 +541,12 @@ um.count(key) // return:bool，是否存在这个key
   ```c++
   
   ```
+
+## 容器存放类
+
+- vector\<S\> 的reserve()不会调用S的构造函数，只是预留出位置，所以位置上有可能是之前的随机数
+- map<int,S> m，若使用m[0]=S(1,2)赋值，则首先调用S(1,2)的有参构造函数，随后创建一个m[0]，==**即调用S的无参构造函数**==，最后再赋值
+- 容器中的类的拷贝是深拷贝！**可以不存指针**！
 
 # 各种stream
 

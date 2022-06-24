@@ -156,7 +156,11 @@ https://www.bilibili.com/video/BV1Xs411374a?p=78
 
 ## 和弦编配
 
+### 增强build-up推进力
 
+- 举例是4-5-1，1进入副歌
+  - 演奏4-5的时候，把4级弹成F/G。之后左手是G，右手重复F-G-F-G，但每次都通过转位，让最高音上行
+  - https://www.bilibili.com/video/BV1cv411z7dR?spm_id_from=333.337.search-card.all.click
 
 ### 12小节蓝调
 

@@ -1,3 +1,27 @@
+# 0 acm策略
+
+- 开n长度的数组，认为需要O(n)时间。==int tmp[n]很长的时候，要到外面先开好==
+
+- 当需要为每个值加一个索引的时候(平常使用struct感觉就可以)
+
+  ```c++
+  /*执行速度排名*/
+  // rk1 
+  int val[N];
+  int inde[N];
+  
+  // rk >1（class同理）
+  struct S{
+      int val,inde;
+  };
+  S ss[N];
+  
+  // rk >1
+  pair<int,int> p[N];
+  ```
+
+  
+
 # 1 基础数据结构
 
 ## 1.1 数组/链表
@@ -1459,11 +1483,200 @@
 
 - 
 
-## 2.2 二叉搜索树
+## 2.2 二叉搜索树(没看完)
+
+- BST： binary search tree
+  - 每个节点比左边所有节点大，比右边所有节点小
+  - 中序遍历，可以出现升序序列
+
+#### 2.2.1 BST子树最大键值和
+
+- leetcode：1373
+
+- 给你一棵以 `root` 为根的 **二叉树** ，请你返回 **任意** 二叉搜索子树的最大键值和。
+
+  ![image-20220604172309032](labuladong.assets/image-20220604172309032.png)
+
+  ![image-20220604172352625](labuladong.assets/image-20220604172352625.png)
+  
+- 需要注意的是，在最后，更新本节点的4个值时，不能直接使用右最大/左最小。因为不是所有的节点都有左右节点，左右节点可能存在空的情况
+  
+  <img src="labuladong.assets/0529158F1A3F0EA61A74AB835B3E52D0.png" alt="img" style="zoom: 25%;" />
+  
+  ```c++
+  class Solution {
+  public:
+      int res = INT_MIN;
+      int maxSumBST(TreeNode* root) {
+          dfs(root);
+          return (res > 0 ? res : 0);
+      }
+  
+      // 返回值: {min, max, sum, isBiSearchTree}
+      vector<int> dfs(TreeNode* node) {
+          if (!node) return {INT_MAX, INT_MIN, 0, true};
+          auto leftVec = dfs(node->left);
+          auto rightVec = dfs(node->right);
+          // 更新当前子树的和
+          int sum = leftVec[2] + rightVec[2] + node->val;
+          bool isBi = false;
+          // 大于左子树最大值，说明比左子树所有元素都大
+          // 小于右子树最小值，说明比右子树所有元素都小
+          if (node->val > leftVec[1] && node->val < rightVec[0]) {
+              // 左子树和右子树是二叉搜索树
+              if (leftVec[3] && rightVec[3]) {
+                  isBi = true;
+              }
+          }
+          if (isBi) res = max(res, sum);
+          // 更新当前子树的最大值和最小值
+          int maxVal = max(max(leftVec[1], rightVec[1]), node->val);
+          int minVal = min(min(leftVec[0], rightVec[0]), node->val);
+          return {minVal, maxVal, sum, isBi};
+      }
+  };
+  ```
+  
+  
 
 ## 2.3 图论
 
-### 2.3.1 最短路算法
+### 2.3.1 图基本结构
+
+- 存储图：邻接表/邻接矩阵
+
+- DFS遍历图 模板
+
+  ```java
+  // 防止重复遍历同一个节点
+  boolean[] visited;
+  // 记录从起点到当前节点的路径
+  boolean[] onPath;
+  
+  boolean canFinish(int numCourses, int[][] prerequisites) {
+      List<Integer>[] graph = buildGraph(numCourses, prerequisites);
+      visited = new boolean[numCourses];
+      /***对每个节点调用一遍，防止有孤点***/
+      for (int i = 0; i < numCourses; i++) {
+          traverse(graph, i);
+      }
+  }
+  
+  /* 图遍历框架 */
+  void traverse(Graph graph, int s) {
+      if (visited[s]) return;
+      // 经过节点 s，标记为已遍历
+      visited[s] = true;
+      // 做选择：标记节点 s 在路径上
+      onPath[s] = true;
+      for (int neighbor : graph.neighbors(s)) {
+          traverse(graph, neighbor);
+      }
+      // 撤销选择：节点 s 离开路径
+      onPath[s] = false;
+  }
+  ```
+
+#### 2.3.1.1 判断有环
+
+- leetcode：207
+
+```java
+boolean[] onPath;
+boolean[] visited;
+
+boolean hasCycle = false;
+
+void traverse(List<Integer>[] graph, int s) {
+    if (onPath[s]) {
+        // 发现环！！！
+        hasCycle = true;
+    }
+    /****如果有一个节点被遍历过了，那么他的子节点也都被遍历过了，所以没必要遍历一个已经被遍历过的点****/
+    if (visited[s] || hasCycle) {
+        return;
+    }
+    // 将节点 s 标记为已遍历
+    visited[s] = true;
+    // 开始遍历节点 s
+    onPath[s] = true;
+    for (int t : graph[s]) {
+        traverse(graph, t);
+    }
+    // 节点 s 遍历完成
+    onPath[s] = false;
+}
+```
+
+#### 2.3.1.2 有环+拓扑排序 by BFS/DFS
+
+https://mp.weixin.qq.com/s?__biz=MzAxODQxMDM0Mw==&mid=2247495847&idx=1&sn=3725a1e06cfb78fc15a9e223934cda4d&scene=21#wechat_redirect
+
+### 2.3.2 二分图的判定
+
+https://mp.weixin.qq.com/s?__biz=MzAxODQxMDM0Mw==&mid=2247492491&idx=1&sn=4c6f4f6864640ecaa4e48acd0acd31c6&scene=21#wechat_redirect
+
+### 2.3.3 并查集
+
+https://mp.weixin.qq.com/s?__biz=MzAxODQxMDM0Mw==&mid=2247497087&idx=1&sn=6d68414edf4a19e2d1fba94210851eeb&scene=21#wechat_redirect
+
+```c++
+// Union Find
+// 连通分量个数
+int count;
+// 存储每个节点的父节点
+int parent[N];
+// n 为图中节点的个数
+void create_uf(int n) {
+    count = n;
+    for (int i = 0; i < n; i++) {
+        parent[i] = i;
+    }
+}
+// 将节点 p 和节点 q 连通
+void union(int p, int q) {
+    int rootP = find(p);
+    int rootQ = find(q);
+    if (rootP == rootQ)
+        return;
+    parent[rootQ] = rootP;
+    // 两个连通分量合并成一个连通分量
+    count--;
+}
+// 判断节点 p 和节点 q 是否连通
+bool connected(int p, int q) {
+    int rootP = find(p);
+    int rootQ = find(q);
+    return rootP == rootQ;
+}
+int find(int x) {
+    if (parent[x] != x) {
+        parent[x] = find(parent[x]);
+    }
+    return parent[x];
+}
+// 返回图中的连通分量个数
+int count() {
+    return count;
+}
+```
+
+### 2.3.4 最小生成树
+
+- 所有可能的生成树中，边上权重和最小的那棵生成树就叫「最小生成树」
+
+#### 2.3.4.1 Kruskal 算法
+
+- 将所有边按照权重，从小到大排序（贪心）
+- 对于添加的这条边，如果该边的两个节点本来就在同一连通分量里，那么添加这条边会产生环；反之，如果该边的两个节点不在同一连通分量里，则添加这条边不会产生环。
+
+#### 2.3.4.2 Prim算法
+
+- prim算法基本思想：对图G(V,E)设置集合S来存放已被访问的顶点，然后执行n次下面的两个步骤(n为顶点个数)
+  1. 每次从集合V-S中选择与集合S最近的一个顶点(记为u)，访问u并将其加入集合S，同时把这条离集合S最近的边加入最小生成树。
+  2. 令顶点u作为集合S与集合V-S连接的接口，优化从u能到达的未访问顶点v与集合S的最短距离
+
+### 2.3.x 最短路算法
 
 - 整体摘自这个博客：
 
@@ -1483,30 +1696,9 @@
   - 代码
 
     ```c++
-    #define MAX 65535
-    int Chara[N][N];// Chara为邻接矩阵
-    int p[N][N];  // p为前驱矩阵，“i到j的最短路，应该让i先去p[i][j]中转”
-    int n,m;
     
-    void Floyd()
-    {
-       for(int i=0;i<n;i++)
-          for(int j=0;j<n;j++)
-              p[i][j]=j;//初始化，认为i到j的最短路 只能是 i直接到j
-        
-        for(int k=0;k<n;k++)
-            for(int i=0;i<n;i++)
-                for(int j=0;j<n;j++){
-                    if(Chara[i][k] == MAX || Chara[k][j] == MAX) continue;
-                    if(Chara[i][j] > Chara[i][k] + Chara[k][j]){
-                        //如果经过下标k顶点路径比原两点间路径更短
-                        //将当前两点权值设为更小的那一个
-                          Chara[i][j] = Chara[i][k] + Chara[k][j];
-                          p[i][j]=p[i][k];//路径设置经过下标k的顶点
-                    }
-                }
     ```
-
+  
 - 原理探讨：https://blog.csdn.net/xianpingping/article/details/79947091?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_title~default-0.pc_relevant_default&spm=1001.2101.3001.4242.1&utm_relevant_index=3
 
   - 简单来说：
@@ -1576,8 +1768,8 @@
                     ans = dis[j];
                 }
             }
-            vis[k] = 1;   //标记已访问
             if(ans == INF) break; //表示剩下所有点都不通
+            vis[k] = 1;   //标记已访问
             for(int j =0; j<m; j++)  //松弛操作，更新起点到所有未访问点的距离
             {
                 if(!vis[j] &&  dis[k] + Chara[k][j]<dis[j] )
@@ -1589,6 +1781,12 @@
         }
     }
     ```
+
+#### 2.3.1.4 Bellman-Ford算法
+
+https://www.jianshu.com/p/b876fe9b2338
+
+- 每次拿所有边进行松弛操作，最多执行n-1次
 
 #### 2.3.1.3 SPFA算法
 
@@ -1653,15 +1851,420 @@
 
   - 在储存边时，记录下每个点的入度，每个点入队的时候记录一次，如果入队的次数大于这个点的入度，说明从某一条路进入了两次，即该点处成环。
 
-### 2.3.2 费用流
+### 2.3.y 费用流
 
 
 
-# 暴力搜索算法
+# 3 暴力搜索算法
 
-## DFS 算法/回溯算法
+## 3.1 DFS 算法/回溯算法
 
-## BFS 算法
+### 3.1.1 DFS框架
+
+- 框架
+
+  <img src="labuladong.assets/image-20220619155532028.png" alt="image-20220619155532028" style="zoom: 67%;" />
+
+- 排列组合计算公式
+
+  <img src="labuladong.assets/image-20220619155904478.png" alt="image-20220619155904478" style="zoom: 50%;" />
+
+- 通俗来说，我们应该尽量「少量多次」，就是说宁可多做几次选择，也不要给太大的选择空间；宁可「二选一」选 `k` 次，也不要 「`k` 选一」选一次。
+
+### 3.1.2 组合/排列 
+
+#### 3.1.2.1 组合/子集问题回溯算法框架
+
+```java
+/*元素无重,不可复选*/
+void backtrack(int[] nums, int start) {
+    // 回溯算法标准框架
+    for (int i = start; i < nums.length; i++) {
+        // 做选择
+        track.addLast(nums[i]);
+        // 注意参数
+        backtrack(nums, i + 1);
+        // 撤销选择
+        track.removeLast();
+    }
+}
+
+/* 元素有重,不可复选 */   //相比上面，只是加了个if
+Arrays.sort(nums);
+
+void backtrack(int[] nums, int start) {
+    // 回溯算法标准框架
+    for (int i = start; i < nums.length; i++) {
+        // 剪枝逻辑，跳过值相同的相邻树枝
+        if (i > start && nums[i] == nums[i - 1]) {
+            continue;
+        }
+        // 做选择
+        track.addLast(nums[i]);
+        // 注意参数
+        backtrack(nums, i + 1);
+        // 撤销选择
+        track.removeLast();
+    }
+}
+
+/*元素无重,可复选*/     // i还可以从i开始，加剪枝条件即可
+void backtrack(int[] nums, int start) {
+    // 回溯算法标准框架
+    for (int i = start; i < nums.length; i++) {
+        // 做选择
+        track.addLast(nums[i]);
+        // 注意参数
+        backtrack(nums, i);
+        // 撤销选择
+        track.removeLast();
+    }
+}
+```
+
+#### 3.1.2.2 排列问题回溯算法框架
+
+```java
+/*元素无重,不可复选*/
+void backtrack(int[] nums) {
+    for (int i = 0; i < nums.length; i++) {
+        // 剪枝逻辑
+        if (used[i]) {
+            continue;
+        }
+        // 做选择
+        used[i] = true;
+        track.addLast(nums[i]);
+
+        backtrack(nums);
+        // 取消选择
+        track.removeLast();
+        used[i] = false;
+    }
+}
+
+/* 元素有重,不可复选 */
+Arrays.sort(nums);
+
+void backtrack(int[] nums) {
+    for (int i = 0; i < nums.length; i++) {
+        // 剪枝逻辑
+        if (used[i]) {
+            continue;
+        }
+        // 剪枝逻辑，固定相同的元素在排列中的相对位置
+        if (i > 0 && nums[i] == nums[i - 1] && !used[i - 1]) {
+            continue;
+        }
+        // 做选择
+        used[i] = true;
+        track.addLast(nums[i]);
+
+        backtrack(nums);
+        // 取消选择
+        track.removeLast();
+        used[i] = false;
+    }
+}
+
+/*元素无重,可复选*/
+void backtrack(int[] nums) {
+    for (int i = 0; i < nums.length; i++) {
+        // 做选择
+        track.addLast(nums[i]);
+
+        backtrack(nums);
+        // 取消选择
+        track.removeLast();
+    }
+}
+```
+
+
+
+#### 3.1.2.3 排列（元素可重不可复选）例子
+
+排列问题的输入如果存在重复，比子集/组合问题稍微复杂一点，我们看看力扣第 47 题「全排列 II」：
+
+给你输入一个**可包含重复数字**的序列`nums`，请你写一个算法，返回**所有可能的全排列**，函数签名如下：
+
+```
+List<List<Integer>> permuteUnique(int[] nums)
+```
+
+比如输入`nums = [1,2,2]`，函数返回：
+
+```
+[ [1,2,2],[2,1,2],[2,2,1] ]
+```
+
+先看解法代码：
+
+```
+List<List<Integer>> res = new LinkedList<>();
+LinkedList<Integer> track = new LinkedList<>();
+boolean[] used;
+
+public List<List<Integer>> permuteUnique(int[] nums) {
+    // 先排序，让相同的元素靠在一起
+    Arrays.sort(nums);
+    used = new boolean[nums.length];
+    backtrack(nums, track);
+    return res;
+}
+
+void backtrack(int[] nums) {
+    if (track.size() == nums.length) {
+        res.add(new LinkedList(track));
+        return;
+    }
+
+    for (int i = 0; i < nums.length; i++) {
+        if (used[i]) {
+            continue;
+        }
+        // 新添加的剪枝逻辑，固定相同的元素在排列中的相对位置
+        if (i > 0 && nums[i] == nums[i - 1] && !used[i - 1]) {
+            continue;
+        }
+        track.add(nums[i]);
+        used[i] = true;
+        backtrack(nums);
+        track.removeLast();
+        used[i] = false;
+    }
+}
+```
+
+你对比一下之前的标准全排列解法代码，这段解法代码只有两处不同：
+
+1、对`nums`进行了排序。
+
+2、添加了一句额外的剪枝逻辑。
+
+类比输入包含重复元素的子集/组合问题，你大概应该理解这么做是为了防止出现重复结果。
+
+但是注意排列问题的剪枝逻辑，和子集/组合问题的剪枝逻辑略有不同：新增了`!used[i - 1]`的逻辑判断。
+
+这个地方理解起来就需要一些技巧性了，且听我慢慢到来。为了方便研究，依然把相同的元素用上标`'`以示区别。
+
+假设输入为`nums = [1,2,2']`，标准的全排列算法会得出如下答案：
+
+```
+[
+    [1,2,2'],[1,2',2],
+    [2,1,2'],[2,2',1],
+    [2',1,2],[2',2,1]
+]
+```
+
+显然，这个结果存在重复，比如`[1,2,2']`和`[1,2',2]`应该只被算作同一个排列，但被算作了两个不同的排列。
+
+所以现在的关键在于，如何设计剪枝逻辑，把这种重复去除掉？
+
+**答案是，保证相同元素在排列中的相对位置保持不变**。
+
+比如说`nums = [1,2,2']`这个例子，我保持排列中`2`一直在`2'`前面。
+
+这样的话，你从上面 6 个排列中只能挑出 3 个排列符合这个条件：
+
+```
+[ [1,2,2'],[2,1,2'],[2,2',1] ]
+```
+
+这也就是正确答案。
+
+进一步，如果`nums = [1,2,2',2'']`，我只要保证重复元素`2`的相对位置固定，比如说`2 -> 2' -> 2''`，也可以得到无重复的全排列结果。
+
+仔细思考，应该很容易明白其中的原理：
+
+**标准全排列算法之所以出现重复，是因为把相同元素形成的排列序列视为不同的序列，但实际上它们应该是相同的；而如果固定相同元素形成的序列顺序，当然就避免了重复**。
+
+那么反映到代码上，你注意看这个剪枝逻辑：
+
+```
+// 新添加的剪枝逻辑，固定相同的元素在排列中的相对位置
+if (i > 0 && nums[i] == nums[i - 1] && !used[i - 1]) {
+    // 如果前面的相邻相等元素没有用过，则跳过
+    continue;
+}
+// 选择 nums[i]
+```
+
+**当出现重复元素时，比如输入`nums = [1,2,2',2'']`，`2'`只有在`2`已经被使用的情况下才会被选择，`2''`只有在`2'`已经被使用的情况下才会被选择，这就保证了相同元素在排列中的相对位置保证固定**。
+
+好了，这样包含重复输入的排列问题也解决了。
+
+
+
+## 3.2 BFS 算法
+
+### 3.2.1 BFS框架
+
+```java
+// 计算从起点 start 到终点 target 的最近距离
+int BFS(Node start, Node target) {
+    Queue<Node> q; // 核心数据结构
+    Set<Node> visited; // 避免走回头路
+
+    q.offer(start); // 将起点加入队列
+    visited.add(start);
+    int step = 0; // 记录扩散的步数
+
+    while (q not empty) {
+        int sz = q.size();
+        /* 将当前队列中的所有节点向四周扩散 */
+        for (int i = 0; i < sz; i++) {
+            Node cur = q.poll();
+            /* 划重点：这里判断是否到达终点 */
+            if (cur is target)
+                return step;
+            /* 将 cur 的相邻节点加入队列 */
+            for (Node x : cur.adj())
+                if (x not in visited) {
+                    q.offer(x);
+                    visited.add(x);
+                }
+        }
+        /* 划重点：更新步数在这里 */
+        step++;
+    }
+}
+```
+
+
+
+### 3.2.2 例题：解开密码锁的最少次数
+
+这道 LeetCode 题目是第 752 题，比较有意思：
+
+![图片](labuladong.assets/640.jpeg)
+
+题目中描述的就是我们生活中常见的那种密码锁，若果没有任何约束，最少的拨动次数很好算，就像我们平时开密码锁那样直奔密码拨就行了。
+
+但现在的难点就在于，不能出现`deadends`，应该如何计算出最少的转动次数呢？
+
+**第一步，我们不管所有的限制条件，不管`deadends`和`target`的限制，就思考一个问题：如果让你设计一个算法，穷举所有可能的密码组合，你怎么做**？
+
+穷举呗，再简单一点，如果你只转一下锁，有几种可能？总共有 4 个位置，每个位置可以向上转，也可以向下转，也就是有 8 种可能对吧。
+
+比如说从`"0000"`开始，转一次，可以穷举出`"1000", "9000", "0100", "0900"...`共 8 种密码。然后，再以这 8 种密码作为基础，对每个密码再转一下，穷举出所有可能…
+
+**仔细想想，这就可以抽象成一幅图，每个节点有 8 个相邻的节点**，又让你求最短距离，这不就是典型的 BFS 嘛，框架就可以派上用场了，先写出一个「简陋」的 BFS 框架代码再说别的：
+
+```
+// 将 s[j] 向上拨动一次
+String plusOne(String s, int j) {
+    char[] ch = s.toCharArray();
+    if (ch[j] == '9')
+        ch[j] = '0';
+    else
+        ch[j] += 1;
+    return new String(ch);
+}
+// 将 s[i] 向下拨动一次
+String minusOne(String s, int j) {
+    char[] ch = s.toCharArray();
+    if (ch[j] == '0')
+        ch[j] = '9';
+    else
+        ch[j] -= 1;
+    return new String(ch);
+}
+
+// BFS 框架，打印出所有可能的密码
+void BFS(String target) {
+    Queue<String> q = new LinkedList<>();
+    q.offer("0000");
+
+    while (!q.isEmpty()) {
+        int sz = q.size();
+        /* 将当前队列中的所有节点向周围扩散 */
+        for (int i = 0; i < sz; i++) {
+            String cur = q.poll();
+            /* 判断是否到达终点 */
+            System.out.println(cur);
+
+            /* 将一个节点的相邻节点加入队列 */
+            for (int j = 0; j < 4; j++) {
+                String up = plusOne(cur, j);
+                String down = minusOne(cur, j);
+                q.offer(up);
+                q.offer(down);
+            }
+        }
+        /* 在这里增加步数 */
+    }
+    return;
+}
+```
+
+PS：这段代码当然有很多问题，但是我们做算法题肯定不是一蹴而就的，而是从简陋到完美的。不要完美主义，咱要慢慢来，好不。
+
+**这段 BFS 代码已经能够穷举所有可能的密码组合了，但是显然不能完成题目，有如下问题需要解决**：
+
+1、会走回头路。比如说我们从`"0000"`拨到`"1000"`，但是等从队列拿出`"1000"`时，还会拨出一个`"0000"`，这样的话会产生死循环。
+
+2、没有终止条件，按照题目要求，我们找到`target`就应该结束并返回拨动的次数。
+
+3、没有对`deadends`的处理，按道理这些「死亡密码」是不能出现的，也就是说你遇到这些密码的时候需要跳过。
+
+如果你能够看懂上面那段代码，真得给你鼓掌，只要按照 BFS 框架在对应的位置稍作修改即可修复这些问题：
+
+```
+int openLock(String[] deadends, String target) {
+    // 记录需要跳过的死亡密码
+    Set<String> deads = new HashSet<>();
+    for (String s : deadends) deads.add(s);
+    // 记录已经穷举过的密码，防止走回头路
+    Set<String> visited = new HashSet<>();
+    Queue<String> q = new LinkedList<>();
+    // 从起点开始启动广度优先搜索
+    int step = 0;
+    q.offer("0000");
+    visited.add("0000");
+
+    while (!q.isEmpty()) {
+        int sz = q.size();
+        /* 将当前队列中的所有节点向周围扩散 */
+        for (int i = 0; i < sz; i++) {
+            String cur = q.poll();
+
+            /* 判断是否到达终点 */
+            if (deads.contains(cur))
+                continue;
+            if (cur.equals(target))
+                return step;
+
+            /* 将一个节点的未遍历相邻节点加入队列 */
+            for (int j = 0; j < 4; j++) {
+                String up = plusOne(cur, j);
+                if (!visited.contains(up)) {
+                    q.offer(up);
+                    visited.add(up);
+                }
+                String down = minusOne(cur, j);
+                if (!visited.contains(down)) {
+                    q.offer(down);
+                    visited.add(down);
+                }
+            }
+        }
+        /* 在这里增加步数 */
+        step++;
+    }
+    // 如果穷举完都没找到目标密码，那就是找不到了
+    return -1;
+}
+```
+
+至此，我们就解决这道题目了。有一个比较小的优化：可以不需要`dead`这个哈希集合，可以直接将这些元素初始化到`visited`集合中，效果是一样的，可能更加优雅一些。
+
+
+
+### 3.2.3 例题：华容道
+
+https://mp.weixin.qq.com/s?__biz=MzAxODQxMDM0Mw==&mid=2247485383&idx=1&sn=4cd4b5b70e2eda33ad66562e5c007a1e&scene=21#wechat_redirect
 
 # 动态规划
 
@@ -1679,6 +2282,261 @@
 
 ## 面试必知必会
 
+# 必会板子
 
+## 快排
+
+- 代码
+
+  - 几个极端情况：
+
+    - nums里只有两个数字时（eg：nums={10,20}，lo=0，hi=1）
+      - partition中，i=j=1，进一次while
+
+  - 代码
+
+    - 易错点：
+
+    ```c++
+    int i=low+1; // [low,i)<=pivot
+    int j=high;  // (j,high]>pivot
+    
+    if(i>=j) break; // 这里需要是>=，出现的情况是pivot在最左/最右
+    ```
+
+    
+
+    ```c++
+    class Solution {
+    public:
+        vector<int> sortArray(vector<int>& nums) {
+            shuffle(nums);
+            quicksort(nums,0,nums.size()-1);
+            return nums;
+        }
+        // 排序nums[low]到nums[high]
+        void quicksort(vector<int>& nums,int low,int high){
+            if(low>=high) return;
+    
+            int q=partition(nums,low,high);
+            quicksort(nums,low,q-1);
+            quicksort(nums,q+1,high);
+        }
+        // 每次nums[low]选为pivot
+        int partition(vector<int>& nums,int low,int high){
+            int pivot=nums[low];
+            int i=low+1; // [low,i)<=pivot
+            int j=high;  // (j,high]>pivot
+    
+            while(i<=j){
+                while(i<high && nums[i]<=pivot){
+                    i++;
+                }
+                while(j>low && nums[j]>pivot){
+                    j--;
+                }
+                // 这里需要是>=，出现的情况是pivot在最左/最右
+                if(i>=j) break;
+                swap(nums[i],nums[j]);
+            }
+            swap(nums[low],nums[j]);
+            return j;
+        }
+        void shuffle(vector<int>& nums){
+            srand(time(0));
+            int n=nums.size();
+            for(int i=0;i<n;++i){
+                j=rand()%(n-i)+i;
+                swap(nums[i],nums[j]);
+            }
+        }
+    }
+    ```
+
+### 快速选择算法
+
+- 问题引入：寻找数组中第k大的元素
+
+  - leecode：215题
+
+- 二叉堆（优先队列）
+
+  - 代码
+
+    ```java
+    int findKthLargest(int[] nums, int k) {
+        // 小顶堆，堆顶是最小元素
+        PriorityQueue<Integer> 
+            pq = new PriorityQueue<>();
+        for (int e : nums) {
+            // 每个元素都要过一遍二叉堆
+            pq.offer(e);
+            // 堆中元素多于 k 个时，删除堆顶元素
+            if (pq.size() > k) {
+                pq.poll();
+            }
+        }
+        // pq 中剩下的是 nums 中 k 个最大元素，
+        // 堆顶是最小的那个，即第 k 个最大元素
+        return pq.peek();
+    }
+    ```
+
+
+## 归并排序
+
+- D:\files\codes\leecode\mergeSort.cpp
+
+### 右侧几个元素比自己小
+
+- leetcode：315
+- 
 
 st表、线段树 逆天
+
+
+
+# 右侧几个元素比自己小
+
+```
+#include <iostream>
+#include <string>
+#include <stack>
+#include <vector>
+#include <ctime>
+#include <stdlib.h>
+#include <map>
+#include <cstdlib>
+using namespace std;
+
+ 
+void Myprint(vector<int>& nums){
+    for(auto x:nums){
+        cout<<x<<' ';
+    }
+}
+class Solution {
+public:
+    struct S{
+        int val,id;
+        S(){}
+        S(int val_,int id_):val(val_),id(id_){}
+    };
+    int ans[100007];
+    S numid[100007];
+    S tmp[100007];
+
+    int n;
+    
+    vector<int> countSmaller(vector<int>& nums) {
+        n=nums.size();
+
+        for(int i=0;i<n;++i){
+            numid[i]={nums[i],i};
+        }
+        mergesort(0,n-1);
+
+        vector<int> anstmp;
+        for(int i=0;i<n;++i){
+            anstmp.push_back(ans[i]);
+        }
+        return anstmp;
+    }
+    // 排序numid[low]到numid[high]
+    void mergesort(int low,int high){
+        if(low>=high) return;
+        int mid=low+(high-low)/2;
+
+        mergesort(low,mid);
+        mergesort(mid+1,high);
+        merge(low,mid,high);
+
+        
+    }
+
+    void merge(int low,int mid, int high){
+        if(low==high) return;
+
+        for(int i=low;i<=high;++i){
+            tmp[i]=numid[i];
+        }
+        int i=low,j=mid+1;
+        for(int p=low;p<=high;++p){
+            if(i==mid+1){
+                numid[p]=tmp[j++];
+            }
+            else if(j==high+1){
+                numid[p]=tmp[i];
+                ans[tmp[i].id]+=j-(mid+1);
+                i++;
+            }
+            else if(tmp[i].val>tmp[j].val){
+                numid[p]=tmp[j++];
+            }
+            else{
+                numid[p]=tmp[i];
+                ans[tmp[i].id]+=j-(mid+1);
+                i++;
+            }
+        }
+        
+    }
+
+};
+
+int main(){
+	Solution s;
+	vector<int> a={5,2,6,1};
+    vector<int> ans(s.countSmaller(a));
+    for(auto x:ans){
+        cout<<x<<' ';
+    }
+	return 0;
+}
+```
+
+
+
+# 并查集
+
+```
+// Union Find
+// 连通分量个数
+int count;
+// 存储每个节点的父节点
+int parent[N];
+// n 为图中节点的个数
+void create_uf(int n) {
+    count = n;
+    for (int i = 0; i < n; i++) {
+        parent[i] = i;
+    }
+}
+// 将节点 p 和节点 q 连通
+void union(int p, int q) {
+    int rootP = find(p);
+    int rootQ = find(q);
+    if (rootP == rootQ)
+        return;
+    parent[rootQ] = rootP;
+    // 两个连通分量合并成一个连通分量
+    count--;
+}
+// 判断节点 p 和节点 q 是否连通
+bool connected(int p, int q) {
+    int rootP = find(p);
+    int rootQ = find(q);
+    return rootP == rootQ;
+}
+int find(int x) {
+    if (parent[x] != x) {
+        parent[x] = find(parent[x]);
+    }
+    return parent[x];
+}
+// 返回图中的连通分量个数
+int count() {
+    return count;
+}
+```
+
